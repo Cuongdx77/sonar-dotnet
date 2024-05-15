@@ -8,7 +8,7 @@ pipeline {
     stage('Checkout Source') {
       agent { label 'agent1' }
       steps {
-        git branch: 'master', credentialsId: 'GitHubCred', url: 'https://github.com/Cuongdx77/Dotnet-Test.git'
+        git branch: 'master', credentialsId: 'GitHubCred', url: 'https://github.com/Cuongdx77/sonar-dotnet.git'
       }
     }
 
@@ -19,7 +19,6 @@ pipeline {
       }
       steps {
         withSonarQubeEnv('Sonarqube_server') {
-          sh 'cd /root/ETicaretAPI'
           sh 'docker build -f Dockerfile-Sonar -t dotnet-sonarscan:03 --rm .'
         }
       }
