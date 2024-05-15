@@ -1,0 +1,51 @@
+# Sử dụng base image đã có sẵn
+FROM dxcuong206/dotnet-java:01 as build
+
+# Thiết lập biến môi trường proxy
+ENV http_proxy http://10.26.2.55:8080
+ENV https_proxy http://10.26.2.55:8080
+ENV no_proxy localhost,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,169.254.0.0/16,127.0.0.0/8
+
+# Định nghĩa các biến ARG cho thông tin của SonarQube
+ARG SONAR_PROJECT_KEY=test-sonarqube1
+ARG SONAR_PROJECT_NAME=test-sonarqube1
+ARG SONAR_HOST_URL=http://10.26.2.215:9000
+ARG SONAR_TOKEN=sqa_1930a831282b897e091d3074560eb2ef2e0bf5c8
+ARG SONAR_VERSION=V2.0.0
+ARG SONAR_QUALITYGATE_WAIT=true
+# Thiết lập thư mục làm việc
+WORKDIR /app
+
+# Thiết lập biến môi trường cho SonarScanner
+ENV PATH="$PATH:/root/.dotnet/tools"
+ENV SONAR_SCANNER_OPTS="-Dhttp.proxyHost=10.26.2.55 -Dhttp.proxyPort=8080"
+
+# Cài đặt SonarScanner và Coverlet
+RUN dotnet tool install --global dotnet-sonarscanner
+RUN dotnet tool install --global coverlet.console
+
+# Bắt đầu quá trình SonarScanner
+RUN dotnet sonarscanner begin \
+  /k:"$SONAR_PROJECT_KEY" \
+  /o:"$SONAR_PROJECT_NAME" \
+  /d:sonar.host.url="$SONAR_HOST_URL" \
+  /d:sonar.login="$SONAR_TOKEN" \
+  /d:sonar.cs.opencover.reportsPaths=/coverage.opencover.xml \
+  /v:"$SONAR_VERSION" \
+  /d:sonar.qualitygate.wait="$SONAR_QUALITYGATE_WAIT"
+
+# Copy mã nguồn vào thư mục làm việc
+COPY . .
+
+# Khôi phục các gói NuGet
+RUN dotnet restore
+
+# Build ứng dụng và thực hiện các bài kiểm tra
+RUN dotnet publish --output /out/
+RUN dotnet test \
+  /p:CollectCoverage=true \
+  /p:CoverletOutputFormat=opencover \
+  /p:CoverletOutput="/coverage"
+
+# Kết thúc quá trình SonarScanner
+RUN dotnet sonarscanner end /d:sonar.token="$SONAR_TOKEN"
