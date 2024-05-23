@@ -19,6 +19,7 @@ pipeline {
       }
       steps {
         withSonarQubeEnv('Sonarqube_server') {
+          sh 'cd analyzers/'
           sh 'docker build -f Dockerfile-Sonar -t dotnet-sonarscan:03 --rm .'
         }
       }
