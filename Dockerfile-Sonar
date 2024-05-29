@@ -35,7 +35,7 @@ RUN dotnet sonarscanner begin \
   /d:sonar.qualitygate.wait="$SONAR_QUALITYGATE_WAIT"
 
 # Copy mã nguồn vào thư mục làm việc
-COPY . .
+COPY ./analyzers .
 
 # Khôi phục các gói NuGet
 RUN dotnet restore
